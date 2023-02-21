@@ -7,7 +7,6 @@ public class Movement : MonoBehaviour
 {
     public CharacterController controller;
     private Vector3 playerVelocity;
-    private bool groundedPlayer;
 
     [SerializeField]
     private float playerSpeed = 2.0f;
@@ -16,11 +15,16 @@ public class Movement : MonoBehaviour
 
     public float totalDistance;
     private Vector3 previousPosition;
+    private Animator anim;
+
+    public GameObject menuUI; //disable UI on load
 
     void Start()
     {
+        anim = GetComponent<Animator>();
         previousPosition = transform.position;  //just so we don't go crazy on the first frame
     }
+
     void Update()
     {
         myText.text = totalDistance.ToString();
@@ -31,14 +35,42 @@ public class Movement : MonoBehaviour
         if (move != Vector3.zero)
         {
             gameObject.transform.forward = move;
+            anim.SetBool("isRunning", true);
         }
+        else anim.SetBool("isRunning", false);
+
 
         playerVelocity.y += gravityValue * Time.deltaTime;
         controller.Move(playerVelocity * Time.deltaTime);
         float distanceThisFrame = Vector3.Distance(transform.position, previousPosition);
         totalDistance += distanceThisFrame;
-        Debug.Log("Distance this frame: " + distanceThisFrame.ToString() + "   Total Distance: " + totalDistance.ToString());
 
         previousPosition = transform.position;
+    }
+
+    public void SavePlayer()
+    {
+        SaveSystem.SavePlayer(this);
+    } 
+    
+    IEnumerator AutoSave()
+    {
+        while(true)
+        {
+            yield return new WaitForSeconds(3);
+            Debug.Log("Saved");
+            SavePlayer();
+        }
+    }
+
+    public void LoadPlayer()
+    {
+        Debug.Log("Player Loaded Successfully");
+
+        PlayerData data = SaveSystem.LoadPlayer();
+
+        totalDistance = data.distance;
+
+        menuUI.SetActive(false);
     }
 }
